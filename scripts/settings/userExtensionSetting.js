@@ -1,8 +1,7 @@
 import {BASE, DERIVED, EDITOR, SYSTEM, USER} from '../../core/manager.js';
 import {updateSystemMessageTableStatus, updateAlternateTable} from "../renderer/tablePushToChat.js";
 import {rebuildSheets , modifyRebuildTemplate, newRebuildTemplate, deleteRebuildTemplate, exportRebuildTemplate, importRebuildTemplate, triggerStepByStepNow} from "../runtime/absoluteRefresh.js";
-import {generateDeviceId} from "../../utils/utility.js";
-import {updateModelList, handleApiTestRequest ,processApiKey} from "./standaloneAPI.js";
+import {updateModelList, handleApiTestRequest, processApiKey, getOrMigrateAccountId} from "./standaloneAPI.js";
 import {filterTableDataPopup} from "../../data/pluginSetting.js";
 import {initRefreshTypeSelector} from "../runtime/absoluteRefresh.js";
 import {rollbackVersion} from "../../services/debugs.js";
@@ -442,7 +441,7 @@ function InitBinging() {
         apiKeyDebounceTimer = setTimeout(async () => {
             try {
                 const rawKey = $(this).val();
-                const result = processApiKey(rawKey, generateDeviceId());
+                const result = processApiKey(rawKey, getOrMigrateAccountId());
                 USER.IMPORTANT_USER_PRIVACY_DATA.custom_api_key = result.encryptedResult.encrypted || result.encryptedResult;
                 USER.saveSettings && USER.saveSettings(); // 保存设置
                 EDITOR.success(result.message);

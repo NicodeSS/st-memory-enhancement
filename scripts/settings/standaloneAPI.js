@@ -2,9 +2,38 @@
 import {BASE, DERIVED, EDITOR, SYSTEM, USER} from '../../core/manager.js';
 import LLMApiService from "../../services/llmApi.js";
 import {PopupConfirm} from "../../components/popupConfirm.js";
+import {generateUid} from "../../utils/utility.js";
 
 let loadingToast = null;
 let currentApiKeyIndex = 0;// 用于记录当前使用的API Key的索引
+
+/**
+ * 获取账户级加密 ID，优先使用服务器端存储以支持跨浏览器
+ * 迁移顺序：服务器端 → localStorage(st_account_id) → localStorage(st_device_id，旧版兼容) → 新生成
+ * @returns {string} 账户 ID
+ */
+export function getOrMigrateAccountId() {
+    // 1. 优先使用服务器端存储的 account_id（跨浏览器共享）
+    const serverAccountId = USER.IMPORTANT_USER_PRIVACY_DATA.account_id;
+    if (serverAccountId) {
+        if (!localStorage.getItem('st_account_id')) {
+            localStorage.setItem('st_account_id', serverAccountId);
+        }
+        return serverAccountId;
+    }
+
+    // 2. 回退到 localStorage（兼容旧版本 st_device_id）
+    let localAccountId = localStorage.getItem('st_account_id') || localStorage.getItem('st_device_id');
+    if (!localAccountId) {
+        localAccountId = generateUid();
+    }
+    localStorage.setItem('st_account_id', localAccountId);
+
+    // 3. 迁移到服务器端存储
+    USER.IMPORTANT_USER_PRIVACY_DATA.account_id = localAccountId;
+
+    return localAccountId;
+}
 
 
 /**
@@ -73,10 +102,10 @@ export function processApiKey(rawKey, deviceId) {
 export async function getDecryptedApiKey() { // Export this function
     try {
         const encrypted = USER.IMPORTANT_USER_PRIVACY_DATA.custom_api_key;
-        const deviceId = localStorage.getItem('st_device_id');
-        if (!encrypted || !deviceId) return null;
+        const accountId = getOrMigrateAccountId();
+        if (!encrypted || !accountId) return null;
 
-        return await decryptXor(encrypted, deviceId);
+        return await decryptXor(encrypted, accountId);
     } catch (error) {
         console.error('API Key 解密失败:', error);
         return null;
