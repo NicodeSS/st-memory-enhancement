@@ -67,12 +67,16 @@
         </div>
     </div>
     <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
-        <label for="stepwise_summary_mode" style="white-space: nowrap; font-size: 0.85rem;">独立填表确认:</label>
+        <label for="stepwise_summary_mode" style="white-space: nowrap; font-size: 0.85rem;">独立填表:</label>
         <select id="stepwise_summary_mode" class="text_pole" style="height: 28px; flex: 1;">
             <option value="ask">每次询问</option>
             <option value="ignore">会话忽略</option>
             <option value="auto">会话自动</option>
         </select>
+        <label for="auto_fill_delay" style="white-space: nowrap; font-size: 0.85rem;">延时:</label>
+        <input id="auto_fill_delay" type="number" class="text_pole" min="0" max="30" step="1"
+            style="height: 28px; width: 50px;" title="自动模式倒计时秒数（0=无延时）">
+        <span style="font-size: 0.85rem;">秒</span>
     </div>
     <hr />
     <div style="display: flex; justify-content: space-between; ">

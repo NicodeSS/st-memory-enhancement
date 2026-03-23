@@ -1,10 +1,23 @@
 import {BASE, DERIVED, EDITOR, SYSTEM, USER} from '../../core/manager.js';
 import { executeIncrementalUpdateFromSummary } from "./absoluteRefresh.js";
-import { newPopupConfirm } from '../../components/popupConfirm.js';
+import { newPopupConfirm, PopupConfirm } from '../../components/popupConfirm.js';
 import { reloadCurrentChat } from "/script.js"
 import {getTablePrompt,initTableData, undoSheets} from "../../index.js"
 
 let toBeExecuted = [];
+
+// 当前活动的独立填表弹窗实例，供 swipe 联动关闭
+let activeStepwisePopup = null;
+
+/**
+ * 外部关闭当前独立填表弹窗（swipe/reroll 时调用）
+ */
+export function dismissStepwisePopup() {
+    if (activeStepwisePopup) {
+        activeStepwisePopup.close();
+        activeStepwisePopup = null;
+    }
+}
 
 /**
  * 初始化两步总结所需的数据
@@ -106,27 +119,80 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
     }
 
     if (stepMode === 'auto') {
-        console.log('会话自动模式，自动执行独立填表');
-        manualSummaryChat(todoChats, true);
+        const delay = USER.getContext().chatMetadata.autoFillDelay ?? 5;
+        if (delay <= 0) {
+            console.log('会话自动模式（无延时），直接执行独立填表');
+            manualSummaryChat(todoChats, true);
+            return;
+        }
+
+        // 倒计时弹窗：标签页可见时倒计时，不可见时暂停
+        console.log(`会话自动模式，${delay} 秒后自动填表`);
+        const popup = new PopupConfirm();
+        activeStepwisePopup = popup;
+
+        const resultPromise = popup.show(
+            `<p>${delay} 秒后自动填表...</p>`,
+            "取消",
+            "立即执行"
+        );
+
+        // 倒计时逻辑
+        const startTime = performance.now();
+        let pausedDuration = 0;
+        let pauseStart = null;
+
+        const onVisibilityChange = () => {
+            if (document.hidden) {
+                pauseStart = performance.now();
+            } else if (pauseStart !== null) {
+                pausedDuration += performance.now() - pauseStart;
+                pauseStart = null;
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        popup.frameUpdate((self) => {
+            if (document.hidden) return;
+            const elapsed = performance.now() - startTime - pausedDuration;
+            const remaining = Math.max(0, delay * 1000 - elapsed);
+            const remainingSeconds = Math.ceil(remaining / 1000);
+            self.text = `<p>${remainingSeconds} 秒后自动填表...</p>`;
+            if (remaining <= 0) {
+                self._handleAction(true);
+            }
+        });
+
+        const autoResult = await resultPromise;
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        activeStepwisePopup = null;
+
+        if (autoResult === true) {
+            manualSummaryChat(todoChats, true);
+        } else {
+            console.log('自动填表被取消（用户点击取消或 swipe 触发关闭）');
+        }
         return;
     }
 
-    // 弹窗询问
+    // ask 模式：弹窗询问
+    const popup = new PopupConfirm();
+    activeStepwisePopup = popup;
+
     const popupContentHtml = `<p>累计 ${todoChats.length} 长度的文本，是否开始独立填表？</p>`;
-    const popupId = 'stepwiseSummaryConfirm';
-    const confirmResult = await newPopupConfirm(
+    const confirmResult = await popup.show(
         popupContentHtml,
         "取消",
         "执行填表",
-        popupId,
+        'stepwiseSummaryConfirm',
         "会话忽略",
         "会话自动"
     );
+    activeStepwisePopup = null;
 
     console.log('newPopupConfirm result for stepwise summary:', confirmResult);
 
     if (confirmResult === 'dont_remind_selected') {
-        // 会话忽略：保存到聊天元数据，本次及后续都跳过
         USER.getContext().chatMetadata.stepwiseSummaryMode = 'ignore';
         USER.saveChat();
         console.log('用户选择会话忽略，已保存到聊天元数据');
@@ -134,7 +200,6 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
     }
 
     if (confirmResult === 'always_confirm_selected') {
-        // 会话自动：保存到聊天元数据，本次及后续都自动执行
         USER.getContext().chatMetadata.stepwiseSummaryMode = 'auto';
         USER.saveChat();
         console.log('用户选择会话自动，已保存到聊天元数据');

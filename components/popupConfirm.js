@@ -198,15 +198,9 @@ export class PopupConfirm {
         });
     }
 
-    // 关闭弹窗 - this.close() can be called if an external force closes the popup.
-    // _handleAction now manages the standard cleanup path.
+    // 外部关闭弹窗，resolve 为 false（等同取消）
     close() {
         this.cancelFrameUpdate();
-        // If resolvePromise exists, it means the popup was shown and might not have been resolved yet.
-        // Resolve with a default value (e.g., false or a specific 'closed_manually' value) if needed.
-        // For now, just visually close it. If _handleAction wasn't called, the promise won't resolve.
-        // This behavior might need adjustment based on how .close() is used externally.
-        // Typically, user interaction (handled by _handleAction) resolves the promise.
         if (this.toastElement) {
             this.toastElement.style.opacity = '0';
             setTimeout(() => {
@@ -219,11 +213,10 @@ export class PopupConfirm {
                 this.toastElement = null;
             }, 300);
         }
-        // If the promise needs to be resolved when close() is called externally:
-        // if (this.resolvePromise) {
-        //     this.resolvePromise('closed_externally'); // Or false, or null
-        //     this.resolvePromise = null; // Prevent multiple resolutions
-        // }
+        if (this.resolvePromise) {
+            this.resolvePromise(false);
+            this.resolvePromise = null;
+        }
     }
 
     frameUpdate(callback) {

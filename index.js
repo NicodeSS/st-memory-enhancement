@@ -3,7 +3,7 @@ import { openTableRendererPopup, updateSystemMessageTableStatus } from "./script
 import { loadSettings } from "./scripts/settings/userExtensionSetting.js";
 import { ext_getAllTables, ext_exportAllTablesAsJson } from './scripts/settings/standaloneAPI.js';
 import { openTableDebugLogPopup } from "./scripts/settings/devConsole.js";
-import { TableTwoStepSummary } from "./scripts/runtime/separateTableUpdate.js";
+import { TableTwoStepSummary, dismissStepwisePopup } from "./scripts/runtime/separateTableUpdate.js";
 import { initTest } from "./components/_fotTest.js";
 import { initAppHeaderTableDrawer, openAppHeaderTableDrawer } from "./scripts/renderer/appHeaderTableBaseDrawer.js";
 import { initRefreshTypeSelector } from './scripts/runtime/absoluteRefresh.js';
@@ -761,6 +761,9 @@ async function onChatChanged() {
  * 滑动切换消息事件
  */
 async function onMessageSwiped(chat_id) {
+    // swipe 时关闭正在显示的独立填表弹窗
+    dismissStepwisePopup();
+
     if (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.isAiWriteTable === false) return
     const chat = USER.getContext().chat[chat_id];
     console.log("滑动切换消息", chat)

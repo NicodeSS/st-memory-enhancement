@@ -516,9 +516,11 @@ async function renderSheetsDOM(mesId = -1) {
     viewSheetsContainer.style.paddingBottom = '150px'
     renderEditableSheetsDOM(sheets, viewSheetsContainer, DERIVED.any.isRenderLastest ? undefined : () => { })
     $("#table_indicator").text(DERIVED.any.isRenderLastest ? "现在是可修改的活动表格" : `现在是第${deep}轮对话中的旧表格，不可被更改`)
-    // 同步独立填表确认模式下拉框
+    // 同步独立填表确认模式下拉框和延时输入
     const currentStepMode = USER.getContext().chatMetadata?.stepwiseSummaryMode ?? 'ask';
     $('#stepwise_summary_mode').val(currentStepMode);
+    const currentDelay = USER.getContext().chatMetadata?.autoFillDelay ?? 5;
+    $('#auto_fill_delay').val(currentDelay);
     task.log()
 }
 
@@ -597,6 +599,15 @@ async function initTableView(mesId) {
         const mode = $(this).val();
         if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
         USER.getContext().chatMetadata.stepwiseSummaryMode = mode;
+        USER.saveChat();
+    })
+
+    // 自动填表延时设置
+    $(document).on('change', '#auto_fill_delay', function () {
+        const delay = Math.max(0, Math.min(30, parseInt($(this).val()) || 0));
+        $(this).val(delay);
+        if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
+        USER.getContext().chatMetadata.autoFillDelay = delay;
         USER.saveChat();
     })
 
