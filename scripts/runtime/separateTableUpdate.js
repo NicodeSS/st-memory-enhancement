@@ -75,7 +75,7 @@ function MarkChatAsWaiting(chat, swipeUid) {
  * 执行两步总结
  * */
 export async function TableTwoStepSummary(mode, skipConfirm = false) {
-    if (mode!==”manual” && (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.step_by_step === false)) return
+    if (mode !== "manual" && (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.step_by_step === false)) return
 
     // 获取需要执行的两步总结
     const {piece: todoPiece} = USER.getChatPiece()
@@ -116,11 +116,11 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
     const popupId = 'stepwiseSummaryConfirm';
     const confirmResult = await newPopupConfirm(
         popupContentHtml,
-        “取消”,
-        “执行填表”,
+        "取消",
+        "执行填表",
         popupId,
-        “会话忽略”,
-        “会话自动”
+        "会话忽略",
+        "会话自动"
     );
 
     console.log('newPopupConfirm result for stepwise summary:', confirmResult);
@@ -159,7 +159,7 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
  * @param {string|boolean} confirmResult - 用户的确认结果。
  */
 export async function manualSummaryChat(todoChats, confirmResult) {
-    // 步骤一：检查是否需要执行“撤销”操作
+    // 步骤一：检查是否需要执行"撤销"操作
     // 首先获取当前的聊天片段，以判断表格状态
     const { piece: initialPiece } = USER.getChatPiece();
     if (!initialPiece) {
@@ -167,7 +167,7 @@ export async function manualSummaryChat(todoChats, confirmResult) {
         return;
     }
 
-    // 只有当表格中已经有内容时，才执行“撤销并重做”
+    // 只有当表格中已经有内容时，才执行"撤销并重做"
     if (initialPiece.hash_sheets && Object.keys(initialPiece.hash_sheets).length > 0) {
         console.log('[Memory Enhancement] 立即填表：检测到表格中有数据，执行恢复操作...');
         try {
