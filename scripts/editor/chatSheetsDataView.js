@@ -1,7 +1,7 @@
 import { BASE, DERIVED, EDITOR, SYSTEM, USER } from '../../core/manager.js';
 import { updateSystemMessageTableStatus } from "../renderer/tablePushToChat.js";
 import { findNextChatWhitTableData, undoSheets } from "../../index.js";
-import { rebuildSheets } from "../runtime/absoluteRefresh.js";
+import { rebuildSheets, triggerStepByStepNow } from "../runtime/absoluteRefresh.js";
 import { openTableHistoryPopup } from "./tableHistory.js";
 import { PopupMenu } from "../../components/popupMenu.js";
 import { openTableStatisticsPopup } from "./tableStatistics.js";
@@ -516,6 +516,9 @@ async function renderSheetsDOM(mesId = -1) {
     viewSheetsContainer.style.paddingBottom = '150px'
     renderEditableSheetsDOM(sheets, viewSheetsContainer, DERIVED.any.isRenderLastest ? undefined : () => { })
     $("#table_indicator").text(DERIVED.any.isRenderLastest ? "现在是可修改的活动表格" : `现在是第${deep}轮对话中的旧表格，不可被更改`)
+    // 同步独立填表确认模式下拉框
+    const currentStepMode = USER.getContext().chatMetadata?.stepwiseSummaryMode ?? 'ask';
+    $('#stepwise_summary_mode').val(currentStepMode);
     task.log()
 }
 
@@ -582,6 +585,19 @@ async function initTableView(mesId) {
             return
         }
         renderSheetsDOM(nextDeep);
+    })
+
+    // 聊天面板立即填表按钮
+    $(document).on('click', '#chat_trigger_step_by_step_button', function () {
+        EDITOR.tryBlock(triggerStepByStepNow, "立即填表失败");
+    })
+
+    // 独立填表确认模式切换
+    $(document).on('change', '#stepwise_summary_mode', function () {
+        const mode = $(this).val();
+        if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
+        USER.getContext().chatMetadata.stepwiseSummaryMode = mode;
+        USER.saveChat();
     })
 
     return initializedTableView;

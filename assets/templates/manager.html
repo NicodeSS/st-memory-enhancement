@@ -36,6 +36,9 @@
                 data-i18n="[title]Completely rebuild table">
                 <i class="menu_button menu_button_icon fa-solid fa-repeat">表格整理</i>
             </div>
+            <div style="display: flex; justify-content: center" id="chat_trigger_step_by_step_button" title="立即填表">
+                <i class="menu_button menu_button_icon fa-solid fa-play">立即填表</i>
+            </div>
 
             <!--            <div style="display: flex; justify-content: center;" id="paste_table_button">-->
             <!--                <i class="menu_button menu_button_icon fa-solid fa-paste" style="height: 30px; width: 30px" title="粘贴表格"></i>-->
@@ -62,6 +65,14 @@
                     style="height: 30px; width: 30px" title="清空表格" data-i18n="[title]Clear table"></i>
             </div>
         </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+        <label for="stepwise_summary_mode" style="white-space: nowrap; font-size: 0.85rem;">独立填表确认:</label>
+        <select id="stepwise_summary_mode" class="text_pole" style="height: 28px; flex: 1;">
+            <option value="ask">每次询问</option>
+            <option value="ignore">会话忽略</option>
+            <option value="auto">会话自动</option>
+        </select>
     </div>
     <hr />
     <div style="display: flex; justify-content: space-between; ">

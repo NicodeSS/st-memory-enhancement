@@ -1,10 +1,5 @@
 import {SYSTEM, USER} from "../core/manager.js";
 
-// Static map to track temporarily disabled popups by ID
-const disabledPopups = {};
-// Static map to track popups that should always be confirmed for the current session
-const alwaysConfirmPopups = {};
-
 const bgc = '#3736bb'
 const bgcg = '#de81f1'
 // const bgc = 'var(--SmartThemeBotMesBlurTintColor)'
@@ -12,20 +7,10 @@ const bgcg = '#de81f1'
 const tc = '#fff'
 
 export async function newPopupConfirm(text, cancelText = 'Cancel', confirmText = 'Confirm', id = '', dontRemindText = null, alwaysConfirmText = null) {
-    if (id && disabledPopups[id]) {
-        return Promise.resolve('dont_remind_active'); // Permanently disabled, don't show
-    }
-    if (id && alwaysConfirmPopups[id]) {
-        return Promise.resolve(true); // Session-only always confirm, resolve as true but still show popup
-    }
     return await new PopupConfirm().show(text, cancelText, confirmText, id, dontRemindText, alwaysConfirmText);
 }
 
 export class PopupConfirm {
-    static get disabledPopups() { // Getter for external access if needed, though direct modification is in _handleAction
-        return disabledPopups;
-    }
-
     constructor() {
         this.uid = SYSTEM.generateRandomString(10);
         // this.confirm = false; // Less relevant now with specific promise resolutions
@@ -38,15 +23,6 @@ export class PopupConfirm {
     }
 
     _handleAction(resolutionValue) {
-        let actualResolutionValue = resolutionValue;
-        if (resolutionValue === 'dont_remind_selected' && this.id) {
-            disabledPopups[this.id] = true;
-            actualResolutionValue = true; // Act as if "Confirm" was pressed
-        } else if (resolutionValue === 'always_confirm_selected' && this.id) {
-            alwaysConfirmPopups[this.id] = true;
-            actualResolutionValue = true; // Act as if "Confirm" was pressed
-        }
-
         if (this.toastElement) {
             this.toastElement.style.opacity = '0';
             setTimeout(() => {
@@ -60,7 +36,7 @@ export class PopupConfirm {
             }, 300);
         }
         if (this.resolvePromise) {
-            this.resolvePromise(actualResolutionValue);
+            this.resolvePromise(resolutionValue);
         }
     }
 
@@ -72,7 +48,7 @@ export class PopupConfirm {
     set text(value) {
         this._text = value;
         if (this.messageText) {
-            this.messageText.textContent = value;
+            this.messageText.innerHTML = value;
         }
     }
 
@@ -124,7 +100,7 @@ export class PopupConfirm {
         messageIcon.style.padding = '0'
         messageIcon.style.margin = '0'
 
-        this.messageText.textContent = this._text; // 使用存储的text值
+        this.messageText.innerHTML = this._text; // 使用存储的text值
         messageEl.appendChild(messageIcon);
         messageEl.appendChild(this.messageText);
 

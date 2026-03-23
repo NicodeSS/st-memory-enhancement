@@ -74,8 +74,8 @@ function MarkChatAsWaiting(chat, swipeUid) {
 /**
  * 执行两步总结
  * */
-export async function TableTwoStepSummary(mode) {
-    if (mode!=="manual" && (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.step_by_step === false)) return
+export async function TableTwoStepSummary(mode, skipConfirm = false) {
+    if (mode!==”manual” && (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.step_by_step === false)) return
 
     // 获取需要执行的两步总结
     const {piece: todoPiece} = USER.getChatPiece()
@@ -89,34 +89,64 @@ export async function TableTwoStepSummary(mode) {
 
     console.log('待填表的对话片段:', todoChats);
 
-    // 检查是否开启执行前确认
-    const popupContentHtml = `<p>累计 ${todoChats.length} 长度的文本，是否开始独立填表？</p>`;
-    // 移除了模板选择相关的HTML和逻辑
+    // 手动触发且跳过确认时，直接执行
+    if (skipConfirm) {
+        console.log('跳过确认，直接执行独立填表');
+        manualSummaryChat(todoChats, true);
+        return;
+    }
 
+    // 检查聊天级别的独立填表模式偏好
+    if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
+    const stepMode = USER.getContext().chatMetadata.stepwiseSummaryMode ?? 'ask';
+
+    if (stepMode === 'ignore') {
+        console.log('会话忽略模式，跳过独立填表');
+        return;
+    }
+
+    if (stepMode === 'auto') {
+        console.log('会话自动模式，自动执行独立填表');
+        manualSummaryChat(todoChats, true);
+        return;
+    }
+
+    // 弹窗询问
+    const popupContentHtml = `<p>累计 ${todoChats.length} 长度的文本，是否开始独立填表？</p>`;
     const popupId = 'stepwiseSummaryConfirm';
     const confirmResult = await newPopupConfirm(
         popupContentHtml,
-        "取消",
-        "执行填表",
+        “取消”,
+        “执行填表”,
         popupId,
-        "不再提示", // dontRemindText: Permanently disables the popup
-        "一直选是"  // alwaysConfirmText: Confirms for the session
+        “会话忽略”,
+        “会话自动”
     );
 
     console.log('newPopupConfirm result for stepwise summary:', confirmResult);
 
-    if (confirmResult === false) {
-        console.log('用户取消执行独立填表: ', `(${todoChats.length}) `, toBeExecuted);
-        MarkChatAsWaiting(currentPiece, swipeUid);
-    } else {
-        // This block executes if confirmResult is true OR 'dont_remind_active'
-        if (confirmResult === 'dont_remind_active') {
-            console.log('独立填表弹窗已被禁止，自动执行。');
-            EDITOR.info('已选择“一直选是”，操作将在后台自动执行...'); // <--- 增加后台执行提示
-        } else { // confirmResult === true
-            console.log('用户确认执行独立填表 (或首次选择了“一直选是”并确认)');
-        }
+    if (confirmResult === 'dont_remind_selected') {
+        // 会话忽略：保存到聊天元数据，本次及后续都跳过
+        USER.getContext().chatMetadata.stepwiseSummaryMode = 'ignore';
+        USER.saveChat();
+        console.log('用户选择会话忽略，已保存到聊天元数据');
+        return;
+    }
+
+    if (confirmResult === 'always_confirm_selected') {
+        // 会话自动：保存到聊天元数据，本次及后续都自动执行
+        USER.getContext().chatMetadata.stepwiseSummaryMode = 'auto';
+        USER.saveChat();
+        console.log('用户选择会话自动，已保存到聊天元数据');
+        manualSummaryChat(todoChats, true);
+        return;
+    }
+
+    if (confirmResult === true) {
+        console.log('用户确认执行独立填表');
         manualSummaryChat(todoChats, confirmResult);
+    } else {
+        console.log('用户取消执行独立填表: ', `(${todoChats.length}) `, toBeExecuted);
     }
 }
 

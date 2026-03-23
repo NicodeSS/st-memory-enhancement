@@ -849,9 +849,9 @@ export async function importRebuildTemplate() {
 /**
  * 手动触发一次分步填表
  */
-export async function triggerStepByStepNow() {
+export async function triggerStepByStepNow(skipConfirm = true) {
     console.log('[Memory Enhancement] Manually triggering step-by-step update...');
-    TableTwoStepSummary("manual")
+    TableTwoStepSummary("manual", skipConfirm)
 }
 
 /**
