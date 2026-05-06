@@ -240,10 +240,17 @@
                                     </div> -->
                                     <div class="flex-container slider-container"
                                         style="margin: 5px; padding-bottom: 10px" id="token_limit_container">
-                                        <label><span data-i18n="Token limit">Token限制：</span><code
-                                                id="rebuild_token_limit_value">10000</code></label>
-                                        <input type="range" id="rebuild_token_limit" min="1000" max="100000" step="1000"
-                                            value="10000" style="width: calc(100% - 20px);">
+                                        <label for="rebuild_token_limit">
+                                            <span data-i18n="Token limit">Token限制：</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="rebuild_token_limit"
+                                            min="1"
+                                            step="1"
+                                            value="10000"
+                                            inputmode="numeric"
+                                            style="width: calc(100% - 20px);">
                                     </div>
                                     <!-- 屏蔽选项，改为默认token限制 -->
                                     <!-- <div class="checkbox_label">
@@ -252,6 +259,9 @@
                                     <div class="checkbox_label range-block justifyLeft">
                                         <input type="checkbox" id="ignore_user_sent" checked><span
                                             data-i18n="Only reference AI replies">只参考AI回复的消息</span>
+                                    </div>
+                                    <div class="checkbox_label range-block justifyLeft">
+                                        <input type="checkbox" id="rebuild_table_only"><span>仅总结表格</span>
                                     </div>
                                     <div class="checkbox_label range-block justifyLeft">
                                         <input type="checkbox" id="bool_silent_refresh"><span

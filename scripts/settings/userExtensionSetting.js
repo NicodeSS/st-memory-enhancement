@@ -358,6 +358,10 @@ function InitBinging() {
     $('#ignore_user_sent').change(function() {
         USER.tableBaseSetting.ignore_user_sent = $(this).prop('checked');
     });
+    // 仅总结表格
+    $('#rebuild_table_only').change(function() {
+        USER.tableBaseSetting.rebuild_table_only = $(this).prop('checked');
+    });
     // // 强制刷新
     // $('#bool_force_refresh').change(function() {
     //     USER.tableBaseSetting.bool_force_refresh = $(this).prop('checked');
@@ -494,10 +498,24 @@ function InitBinging() {
         USER.tableBaseSetting.clear_up_stairs = Number(value);
     });
     // token限制
-    $('#rebuild_token_limit').on('input', function() {
-        const value = $(this).val();
-        $('#rebuild_token_limit_value').text(value);
-        USER.tableBaseSetting.rebuild_token_limit_value = Number(value);
+    $('#rebuild_token_limit').on('input change', function() {
+        const rawValue = $(this).val();
+        const numericValue = Number(rawValue);
+
+        if (!Number.isFinite(numericValue) || numericValue < 1) {
+            if (rawValue === '') {
+                return;
+            }
+            $(this).val(1);
+            USER.tableBaseSetting.rebuild_token_limit_value = 1;
+            return;
+        }
+
+        const normalizedValue = Math.floor(numericValue);
+        if (String(rawValue) !== String(normalizedValue)) {
+            $(this).val(normalizedValue);
+        }
+        USER.tableBaseSetting.rebuild_token_limit_value = normalizedValue;
     });
     // 模型温度设定
     $('#custom_temperature').on('input', function() {
@@ -572,7 +590,6 @@ export function renderSetting() {
     $('#clear_up_stairs').val(USER.tableBaseSetting.clear_up_stairs);
     $('#clear_up_stairs_value').text(USER.tableBaseSetting.clear_up_stairs);
     $('#rebuild_token_limit').val(USER.tableBaseSetting.rebuild_token_limit_value);
-    $('#rebuild_token_limit_value').text(USER.tableBaseSetting.rebuild_token_limit_value);
     $('#custom_temperature').val(USER.tableBaseSetting.custom_temperature);
     $('#custom_temperature_value').text(USER.tableBaseSetting.custom_temperature);
     // Load step-by-step user prompt
@@ -602,6 +619,7 @@ export function renderSetting() {
     updateSwitch('#use_main_api', USER.tableBaseSetting.use_main_api);
     updateSwitch('#step_by_step_use_main_api', USER.tableBaseSetting.step_by_step_use_main_api);
     updateSwitch('#ignore_del', USER.tableBaseSetting.bool_ignore_del);
+    updateSwitch('#rebuild_table_only', USER.tableBaseSetting.rebuild_table_only);
     // updateSwitch('#bool_force_refresh', USER.tableBaseSetting.bool_force_refresh);
     updateSwitch('#bool_silent_refresh', USER.tableBaseSetting.bool_silent_refresh);
     // updateSwitch('#use_token_limit', USER.tableBaseSetting.use_token_limit);

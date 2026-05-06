@@ -240,12 +240,16 @@ export async function rebuildTableActions(force = false, silentUpdate = USER.tab
         console.log('重整理 - 最新的表格数据:', tableJsonText);
 
         // 获取最近clear_up_stairs条聊天记录
-        const chat = USER.getContext().chat;
-        const lastChats = chatToBeUsed === '' ? await getRecentChatHistory(chat,
-            USER.tableBaseSetting.clear_up_stairs,
-            USER.tableBaseSetting.ignore_user_sent,
-            USER.tableBaseSetting.rebuild_token_limit_value
-        ) : chatToBeUsed;
+        const lastChats = USER.tableBaseSetting.rebuild_table_only
+            ? ''
+            : chatToBeUsed === ''
+                ? await getRecentChatHistory(
+                    USER.getContext().chat,
+                    USER.tableBaseSetting.clear_up_stairs,
+                    USER.tableBaseSetting.ignore_user_sent,
+                    USER.tableBaseSetting.rebuild_token_limit_value
+                )
+                : chatToBeUsed;
 
         // 构建AI提示
         const select = USER.tableBaseSetting.lastSelectedTemplate ?? "rebuild_base"
