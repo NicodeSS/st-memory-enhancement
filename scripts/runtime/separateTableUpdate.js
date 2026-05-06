@@ -9,6 +9,20 @@ let toBeExecuted = [];
 // 当前活动的独立填表弹窗实例，供 swipe 联动关闭
 let activeStepwisePopup = null;
 
+function replaceActiveStepwisePopup(nextPopup) {
+    if (activeStepwisePopup && activeStepwisePopup !== nextPopup) {
+        activeStepwisePopup.close();
+    }
+    activeStepwisePopup = nextPopup;
+    return nextPopup;
+}
+
+function clearActiveStepwisePopup(popup) {
+    if (activeStepwisePopup === popup) {
+        activeStepwisePopup = null;
+    }
+}
+
 /**
  * 外部关闭当前独立填表弹窗（swipe/reroll 时调用）
  */
@@ -105,6 +119,7 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
     // 手动触发且跳过确认时，直接执行
     if (skipConfirm) {
         console.log('跳过确认，直接执行独立填表');
+        dismissStepwisePopup();
         manualSummaryChat(todoChats, true);
         return;
     }
@@ -122,14 +137,14 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
         const delay = USER.getContext().chatMetadata.autoFillDelay ?? 5;
         if (delay <= 0) {
             console.log('会话自动模式（无延时），直接执行独立填表');
+            dismissStepwisePopup();
             manualSummaryChat(todoChats, true);
             return;
         }
 
         // 倒计时弹窗：标签页可见时倒计时，不可见时暂停
         console.log(`会话自动模式，${delay} 秒后自动填表`);
-        const popup = new PopupConfirm();
-        activeStepwisePopup = popup;
+        const popup = replaceActiveStepwisePopup(new PopupConfirm());
 
         const resultPromise = popup.show(
             `<p>${delay} 秒后自动填表...</p>`,
@@ -165,19 +180,18 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
 
         const autoResult = await resultPromise;
         document.removeEventListener('visibilitychange', onVisibilityChange);
-        activeStepwisePopup = null;
+        clearActiveStepwisePopup(popup);
 
         if (autoResult === true) {
             manualSummaryChat(todoChats, true);
         } else {
-            console.log('自动填表被取消（用户点击取消或 swipe 触发关闭）');
+            console.log('自动填表被取消（用户点击取消、swipe 触发关闭，或被新邀请替换）');
         }
         return;
     }
 
     // ask 模式：弹窗询问
-    const popup = new PopupConfirm();
-    activeStepwisePopup = popup;
+    const popup = replaceActiveStepwisePopup(new PopupConfirm());
 
     const popupContentHtml = `<p>累计 ${todoChats.length} 长度的文本，是否开始独立填表？</p>`;
     const confirmResult = await popup.show(
@@ -188,7 +202,7 @@ export async function TableTwoStepSummary(mode, skipConfirm = false) {
         "会话忽略",
         "会话自动"
     );
-    activeStepwisePopup = null;
+    clearActiveStepwisePopup(popup);
 
     console.log('newPopupConfirm result for stepwise summary:', confirmResult);
 
