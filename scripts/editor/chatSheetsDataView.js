@@ -119,6 +119,97 @@ async function importTable(mesId, viewSheetsContainer) {
     fileInput.click();
 }
 
+function parseImportedChatSheets(rawText) {
+    const tables = JSON.parse(rawText);
+    const isChatSheets = tables?.mate?.type === 'chatSheets' || tables?.mate === 'chatSheets';
+    if (!isChatSheets) {
+        throw new Error("请检查你导入的是否是导出的表格数据");
+    }
+
+    const sheetEntries = Object.entries(tables).filter(([sheetUid]) => sheetUid !== 'mate');
+    if (sheetEntries.length === 0) {
+        throw new Error("导入文件中没有可恢复的表格数据");
+    }
+
+    return { tables, sheetEntries };
+}
+
+async function forceImportTableData() {
+    const { piece: targetPiece } = USER.getChatPiece();
+    if (!targetPiece) {
+        EDITOR.error("没有记录载体，表格是保存在聊天记录中的，请聊至少一轮后再重试");
+        return;
+    }
+
+    const confirmation = await EDITOR.callGenericPopup(
+        '强制恢复导入会清空当前会话里的所有表格痕迹，并把导出的 table_data.json 直接覆盖回当前会话。该操作无法撤销，是否继续？',
+        EDITOR.POPUP_TYPE.CONFIRM,
+        '',
+        { okButton: "继续恢复", cancelButton: "取消" }
+    );
+    if (!confirmation) return;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+
+    fileInput.addEventListener('change', function (event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const reader = new FileReader();
+        reader.onload = async function (loadEvent) {
+            let imported;
+            try {
+                imported = parseImportedChatSheets(loadEvent.target.result);
+            } catch (error) {
+                EDITOR.error("强制恢复导入失败：文件格式不正确", error.message, error);
+                return;
+            }
+
+            try {
+                const chat = USER.getContext().chat ?? [];
+                chat.forEach((piece) => {
+                    if (piece && Object.prototype.hasOwnProperty.call(piece, 'hash_sheets')) {
+                        delete piece.hash_sheets;
+                    }
+                    if (piece && Object.prototype.hasOwnProperty.call(piece, 'dataTable')) {
+                        delete piece.dataTable;
+                    }
+                });
+
+                BASE.sheetsData.context = [];
+                DERIVED.any.chatSheetMap = {};
+                targetPiece.hash_sheets = {};
+
+                imported.sheetEntries.forEach(([, sheetData]) => {
+                    const sheet = BASE.createChatSheetByJson(sheetData);
+                    sheet.save(targetPiece, true);
+                });
+
+                BASE.updateSelectBySheetStatus();
+                BASE.refreshTempView(true);
+                await USER.saveChat();
+
+                try {
+                    await refreshContextView();
+                    updateSystemMessageTableStatus(true);
+                    EDITOR.success('强制恢复导入成功');
+                } catch (refreshError) {
+                    EDITOR.warning('表格数据已强制写回，但界面刷新失败，请手动切换对话或刷新页面。', refreshError.message);
+                    console.error('强制恢复导入后刷新失败:', refreshError);
+                }
+            } catch (error) {
+                EDITOR.error("强制恢复导入失败", error.message, error);
+            }
+        };
+
+        reader.readAsText(files[0], 'UTF-8');
+    });
+
+    fileInput.click();
+}
+
 /**
  * 导出表格
  * @param {Array} tables 所有表格数据
@@ -561,6 +652,10 @@ async function initTableView(mesId) {
     // 点击导入表格按钮
     $(document).on('click', '#import_table_button', function () {
         EDITOR.tryBlock(importTable, "导入表格失败", userTableEditInfo.chatIndex, viewSheetsContainer);
+    })
+    // 点击强制恢复导入按钮
+    $(document).on('click', '#force_import_table_button', function () {
+        EDITOR.tryBlock(forceImportTableData, "强制恢复导入失败");
     })
     // 点击导出表格按钮
     $(document).on('click', '#export_table_button', function () {
