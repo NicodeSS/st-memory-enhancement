@@ -223,7 +223,10 @@ export const defaultSettings = await switchLanguage('__defaultSettings__', {
     table_to_chat_mode: 'context_bottom',
     table_cell_width_mode: 'wide1_2_cell',
     to_chat_container: `<div class="table-preview-bar"><details>
-    <summary style="display: flex; justify-content: space-between"> <span>记忆增强表格</span> </summary>
+    <summary style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <span>记忆增强表格</span>
+        <button type="button" class="table-preview-action menu_button" data-table-action="fill-now">立即填表</button>
+    </summary>
     $0
     </details></div>
 
@@ -233,6 +236,12 @@ export const defaultSettings = await switchLanguage('__defaultSettings__', {
         border-radius: 10px;
         color: #888;
         font-size: 0.8rem;
+    }
+    .table-preview-action {
+        padding: 2px 8px;
+        min-height: 24px;
+        font-size: 0.75rem;
+        line-height: 1.2;
     }
     </style>`,
     /**

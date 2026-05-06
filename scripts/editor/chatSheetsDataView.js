@@ -594,6 +594,13 @@ async function initTableView(mesId) {
         EDITOR.tryBlock(triggerStepByStepNow, "立即填表失败");
     })
 
+    // 前端表格容器立即填表按钮
+    $(document).on('click', '[data-table-action="fill-now"]', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        EDITOR.tryBlock(triggerStepByStepNow, "立即填表失败");
+    })
+
     // 独立填表确认模式切换
     $(document).on('change', '#stepwise_summary_mode', function () {
         const mode = $(this).val();
