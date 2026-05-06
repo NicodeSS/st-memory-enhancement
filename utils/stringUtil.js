@@ -57,7 +57,7 @@ export function parseLooseDict(str) {
         while (i < len && content[i] !== ':') {
             key += content[i++];
         }
-        key = key.trim().replace(/^["']|["']$/g, ''); // 去除引号
+        key = key.trim().replace(/^["'“]|["'”]$/g, ''); // 去除引号
         i++; // 跳过冒号
 
         // 读取 value
@@ -70,6 +70,10 @@ export function parseLooseDict(str) {
             quoteChar = content[i];
             inString = true;
             i++;
+        } else if (content[i] === '“') {
+            quoteChar = '”';
+            inString = true;
+            i++;
         }
 
         while (i < len) {
@@ -78,11 +82,17 @@ export function parseLooseDict(str) {
             if (inString) {
                 // 如果遇到嵌套引号，替换为另一种
                 if (char === quoteChar) {
-                    if (content[i + 1] === ','||content[i + 1] == null) {
+                    if (content[i + 1] === ',' || content[i + 1] === '，' || content[i + 1] == null) {
                         i++; // 跳过结尾引号
                         break;
                     } else {
-                        value += char === '"' ? "'" : '"'
+                        if (char === '"') {
+                            value +=  "'"
+                        } else if (char === "'") {
+                            value +=  '"'
+                        } else {
+                            value += char
+                        }
                         i++;
                         continue;
                     }
@@ -101,7 +111,7 @@ export function parseLooseDict(str) {
         result[key] = value.trim().replace(/,/g, '/'); // 替换逗号
 
         // 跳过分隔符和空格
-        while (i < len && (content[i] === ',' || content[i] === ' ')) {
+        while (i < len && (content[i] === ',' || content[i] === '，' || content[i] === ' ')) {
             i++;
         }
     }
@@ -125,9 +135,9 @@ export function parseManualJson(jsonStr) {
 
     function parseValue() {
         skipWhitespace();
-        
+
         const char = str[index];
-        
+
         if (char === '{') {
             return parseObject();
         } else if (char === '[') {
@@ -246,7 +256,7 @@ export function parseManualJson(jsonStr) {
                 if (index >= str.length) {
                     throw new Error('意外的字符串结束');
                 }
-                
+
                 const nextChar = str[index];
                 switch (nextChar) {
                     case '"':
@@ -295,7 +305,7 @@ export function parseManualJson(jsonStr) {
 
     function parseNumber() {
         let numStr = '';
-        
+
         if (str[index] === '-') {
             numStr += str[index++];
         }
@@ -348,17 +358,17 @@ export function parseManualJson(jsonStr) {
     function skipWhitespace() {
         while (index < str.length && /\s/.test(str[index])) {
             index++;
-        } 
+        }
     }
 
     try {
         const result = parseValue();
         skipWhitespace();
-        
+
         if (index < str.length) {
             throw new Error(`解析完成后还有多余字符在位置 ${index}`);
         }
-        
+
         console.log('手动解析 JSON 成功:', result);
         return result;
     } catch (error) {
@@ -387,7 +397,7 @@ export function safeParse(jsonStr) {
             break; // 没有更多的 [ 了
         }
 
-        // 找到对应的 ] 
+        // 找到对应的 ]
         let bracketEnd = -1;
         let bracketCount = 0;
         let inString = false;
