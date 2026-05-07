@@ -9,6 +9,80 @@ let toBeExecuted = [];
 // 当前活动的独立填表弹窗实例，供 swipe 联动关闭
 let activeStepwisePopup = null;
 
+function getFirstNonEmptyString(candidates = []) {
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim() !== '') {
+            return candidate.trim();
+        }
+    }
+    return '';
+}
+
+function isInitialEmptyStepwiseTable(piece) {
+    if (!piece?.hash_sheets) return true;
+
+    const sheets = BASE.hashSheetsToSheets(piece.hash_sheets).filter(sheet => sheet.enable);
+    if (sheets.length === 0) return true;
+
+    return sheets.every(sheet => sheet.isEmpty());
+}
+
+function buildStepwiseProfileContext() {
+    const context = USER.getContext?.() ?? {};
+    const settings = USER.getSettings?.() ?? {};
+    const characterId = context.characterId ?? context.this_chid ?? context.character_id;
+    const character = context.character
+        ?? (Array.isArray(context.characters) && Number.isInteger(characterId) ? context.characters[characterId] : null)
+        ?? null;
+
+    const characterName = getFirstNonEmptyString([
+        character?.name,
+        context.name2,
+        context.character_name,
+    ]);
+    const characterDescription = getFirstNonEmptyString([
+        character?.description,
+        character?.data?.description,
+        context.character_description,
+        context.description,
+    ]);
+
+    const userName = getFirstNonEmptyString([
+        context.name1,
+        context.user_name,
+        context.user?.name,
+    ]);
+    const userDescription = getFirstNonEmptyString([
+        context.user?.description,
+        context.user?.persona_description,
+        context.user_description,
+        context.persona_description,
+        settings.persona_description,
+        settings.default_persona?.description,
+    ]);
+
+    const blocks = [];
+    if (characterDescription) {
+        blocks.push([
+            '<角色描述>',
+            characterName ? `角色名: ${characterName}` : '',
+            characterDescription,
+            '</角色描述>',
+        ].filter(Boolean).join('\n'));
+    }
+
+    if (userDescription) {
+        blocks.push([
+            '<用户设定描述>',
+            userName ? `用户名: ${userName}` : '',
+            userDescription,
+            '</用户设定描述>',
+        ].filter(Boolean).join('\n'));
+    }
+
+    return blocks.join('\n\n');
+}
+
 function replaceActiveStepwisePopup(nextPopup) {
     if (activeStepwisePopup && activeStepwisePopup !== nextPopup) {
         activeStepwisePopup.close();
@@ -275,6 +349,10 @@ export async function manualSummaryChat(todoChats, confirmResult) {
 
     // 表格总体提示词
     const finalPrompt = initTableData(); // 获取表格相关提示词
+
+    const initialProfileContext = isInitialEmptyStepwiseTable(referencePiece)
+        ? buildStepwiseProfileContext()
+        : '';
     
     // 设置
     const useMainApiForStepByStep = USER.tableBaseSetting.step_by_step_use_main_api ?? true;
@@ -287,7 +365,8 @@ export async function manualSummaryChat(todoChats, confirmResult) {
         referencePiece, // 直接传递原始的 piece 对象引用
         useMainApiForStepByStep, // API choice for step-by-step
         USER.tableBaseSetting.bool_silent_refresh, // isSilentUpdate
-        isSilentMode // Pass silent mode flag
+        isSilentMode, // Pass silent mode flag
+        initialProfileContext
     );
 
     console.log('执行独立填表（增量更新）结果:', r);
