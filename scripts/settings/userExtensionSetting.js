@@ -384,6 +384,9 @@ function InitBinging() {
     $('#step_by_step_use_main_api').change(function() {
         USER.tableBaseSetting.step_by_step_use_main_api = this.checked;
     });
+    $('#step_by_step_inject_profile_context').change(function() {
+        USER.tableBaseSetting.step_by_step_inject_profile_context = this.checked;
+    });
     // 根据下拉列表选择的模型更新自定义模型名称
     $('#model_selector').change(function(event) {
         $('#custom_model_name').val(event.target.value);
@@ -618,6 +621,7 @@ export function renderSetting() {
     updateSwitch('#confirm_before_execution', USER.tableBaseSetting.confirm_before_execution);
     updateSwitch('#use_main_api', USER.tableBaseSetting.use_main_api);
     updateSwitch('#step_by_step_use_main_api', USER.tableBaseSetting.step_by_step_use_main_api);
+    updateSwitch('#step_by_step_inject_profile_context', USER.tableBaseSetting.step_by_step_inject_profile_context);
     updateSwitch('#ignore_del', USER.tableBaseSetting.bool_ignore_del);
     updateSwitch('#rebuild_table_only', USER.tableBaseSetting.rebuild_table_only);
     // updateSwitch('#bool_force_refresh', USER.tableBaseSetting.bool_force_refresh);

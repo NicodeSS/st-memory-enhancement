@@ -933,7 +933,6 @@ export async function executeIncrementalUpdateFromSummary(
         const extraContextContent = [lorebookContent, extraStepwiseContext]
             .filter(content => typeof content === 'string' && content.trim() !== '')
             .join('\n\n');
-        console.log('[Memory Enhancement] Step-by-step $4 content:', extraContextContent || '(empty)');
 
         const replacePlaceholders = (text) => {
             if (typeof text !== 'string') return '';

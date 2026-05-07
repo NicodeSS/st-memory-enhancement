@@ -18,18 +18,6 @@ function getFirstNonEmptyString(candidates = []) {
     return '';
 }
 
-function shouldInjectProfileContextForEarlyStepwiseTurns(targetDeep) {
-    const chat = USER.getContext?.().chat ?? [];
-    if (!Array.isArray(chat) || targetDeep < 0) return false;
-
-    const aiReplyCount = chat
-        .slice(0, targetDeep + 1)
-        .filter(message => message?.is_user === false)
-        .length;
-
-    return aiReplyCount > 0 && aiReplyCount <= 3;
-}
-
 function buildStepwiseProfileContext() {
     const context = USER.getContext?.() ?? {};
     const settings = USER.getSettings?.() ?? {};
@@ -79,15 +67,6 @@ function buildStepwiseProfileContext() {
             characterDescription,
             '</角色描述>',
         ].filter(Boolean).join('\n'));
-    } else {
-        console.log('[Memory Enhancement] Character description candidates are empty:', {
-            rawCharacterId,
-            normalizedCharacterId: Number.isFinite(characterId) ? characterId : null,
-            contextCharacter: context.character,
-            characterFromList,
-            contextCharacterDescription: context.character_description,
-            contextDescription: context.description,
-        });
     }
 
     if (userDescription) {
@@ -357,7 +336,7 @@ export async function manualSummaryChat(todoChats, confirmResult) {
 
     // 步骤二：以当前状态（可能已恢复）为基础，继续执行填表
     // 重新获取 piece，确保我们使用的是最新状态（无论是原始状态还是恢复后的状态）
-    const { piece: referencePiece, deep: referenceDeep } = USER.getChatPiece();
+    const { piece: referencePiece } = USER.getChatPiece();
     if (!referencePiece) {
         EDITOR.error("无法获取用于操作的聊天片段，操作中止。");
         return;
@@ -369,7 +348,7 @@ export async function manualSummaryChat(todoChats, confirmResult) {
     // 表格总体提示词
     const finalPrompt = initTableData(); // 获取表格相关提示词
 
-    const initialProfileContext = shouldInjectProfileContextForEarlyStepwiseTurns(referenceDeep)
+    const initialProfileContext = USER.tableBaseSetting.step_by_step_inject_profile_context
         ? buildStepwiseProfileContext()
         : '';
     

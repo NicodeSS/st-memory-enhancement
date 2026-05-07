@@ -96,6 +96,7 @@ export async function filterTableDataPopup(originalData, title, warning) {
     // 双步设置
     waitingRegister.step_by_step = '#table_init_step';
     waitingRegister.step_by_step_use_main_api = '#table_init_step';
+    waitingRegister.step_by_step_inject_profile_context = '#table_init_step';
     waitingRegister.bool_silent_refresh = '#table_init_step';
     // 前端表格
     waitingRegister.isTableToChat = '#table_init_to_chat';
@@ -337,6 +338,8 @@ export const defaultSettings = await switchLanguage('__defaultSettings__', {
     step_by_step: false,
     // 双步是否使用主API
     step_by_step_use_main_api: true,
+    // 独立填表时是否注入角色描述和用户设定描述
+    step_by_step_inject_profile_context: false,
     // 分步填表提示词 (采用多轮消息格式) - 使用单引号字符串，内部转义
     step_by_step_user_prompt: `
  [
