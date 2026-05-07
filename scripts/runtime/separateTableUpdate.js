@@ -18,31 +18,41 @@ function getFirstNonEmptyString(candidates = []) {
     return '';
 }
 
-function isInitialEmptyStepwiseTable(piece) {
-    if (!piece?.hash_sheets) return true;
+function shouldInjectProfileContextForEarlyStepwiseTurns(targetDeep) {
+    const chat = USER.getContext?.().chat ?? [];
+    if (!Array.isArray(chat) || targetDeep < 0) return false;
 
-    const sheets = BASE.hashSheetsToSheets(piece.hash_sheets).filter(sheet => sheet.enable);
-    if (sheets.length === 0) return true;
+    const aiReplyCount = chat
+        .slice(0, targetDeep + 1)
+        .filter(message => message?.is_user === false)
+        .length;
 
-    return sheets.every(sheet => sheet.isEmpty());
+    return aiReplyCount > 0 && aiReplyCount <= 3;
 }
 
 function buildStepwiseProfileContext() {
     const context = USER.getContext?.() ?? {};
     const settings = USER.getSettings?.() ?? {};
-    const characterId = context.characterId ?? context.this_chid ?? context.character_id;
+    const rawCharacterId = context.characterId ?? context.this_chid ?? context.character_id;
+    const characterId = Number(rawCharacterId);
+    const characterFromList = Array.isArray(context.characters) && Number.isFinite(characterId) && characterId >= 0
+        ? context.characters[characterId]
+        : null;
     const character = context.character
-        ?? (Array.isArray(context.characters) && Number.isInteger(characterId) ? context.characters[characterId] : null)
+        ?? characterFromList
         ?? null;
 
     const characterName = getFirstNonEmptyString([
         character?.name,
+        characterFromList?.name,
         context.name2,
         context.character_name,
     ]);
     const characterDescription = getFirstNonEmptyString([
         character?.description,
         character?.data?.description,
+        characterFromList?.description,
+        characterFromList?.data?.description,
         context.character_description,
         context.description,
     ]);
@@ -69,6 +79,15 @@ function buildStepwiseProfileContext() {
             characterDescription,
             '</角色描述>',
         ].filter(Boolean).join('\n'));
+    } else {
+        console.log('[Memory Enhancement] Character description candidates are empty:', {
+            rawCharacterId,
+            normalizedCharacterId: Number.isFinite(characterId) ? characterId : null,
+            contextCharacter: context.character,
+            characterFromList,
+            contextCharacterDescription: context.character_description,
+            contextDescription: context.description,
+        });
     }
 
     if (userDescription) {
@@ -338,7 +357,7 @@ export async function manualSummaryChat(todoChats, confirmResult) {
 
     // 步骤二：以当前状态（可能已恢复）为基础，继续执行填表
     // 重新获取 piece，确保我们使用的是最新状态（无论是原始状态还是恢复后的状态）
-    const { piece: referencePiece } = USER.getChatPiece();
+    const { piece: referencePiece, deep: referenceDeep } = USER.getChatPiece();
     if (!referencePiece) {
         EDITOR.error("无法获取用于操作的聊天片段，操作中止。");
         return;
@@ -350,7 +369,7 @@ export async function manualSummaryChat(todoChats, confirmResult) {
     // 表格总体提示词
     const finalPrompt = initTableData(); // 获取表格相关提示词
 
-    const initialProfileContext = isInitialEmptyStepwiseTable(referencePiece)
+    const initialProfileContext = shouldInjectProfileContextForEarlyStepwiseTurns(referenceDeep)
         ? buildStepwiseProfileContext()
         : '';
     
