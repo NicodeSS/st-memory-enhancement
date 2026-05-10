@@ -867,6 +867,7 @@ export async function triggerStepByStepNow(skipConfirm = true) {
  * @param {boolean} silentUpdate - 是否静默更新,不显示操作确认
  * @param {boolean} [isSilentMode=false] - 是否以静默模式运行API调用（不显示加载提示）
  * @param {string} [extraStepwiseContext=''] - 额外注入到 $4 的上下文（例如初始空表时的角色/用户描述）
+ * @param {string} [stepwiseExtraPrompt=''] - 当前会话独立填表额外要求，注入为 $5
  * @returns {Promise<string>} 'success', 'suspended', 'error', or empty
  */
 export async function executeIncrementalUpdateFromSummary(
@@ -877,7 +878,8 @@ export async function executeIncrementalUpdateFromSummary(
     useMainAPI,
     silentUpdate = USER.tableBaseSetting.bool_silent_refresh,
     isSilentMode = false,
-    extraStepwiseContext = ''
+    extraStepwiseContext = '',
+    stepwiseExtraPrompt = ''
 ) {
     if (!SYSTEM.lazy('executeIncrementalUpdate', 1000)) return '';
 
@@ -941,6 +943,7 @@ export async function executeIncrementalUpdateFromSummary(
             text = text.replace(/(?<!\\)\$2/g, () => summaryChats);
             text = text.replace(/(?<!\\)\$3/g, () => finalPrompt);
             text = text.replace(/(?<!\\)\$4/g, () => extraContextContent);
+            text = text.replace(/(?<!\\)\$5/g, () => stepwiseExtraPrompt);
             return text;
         };
 

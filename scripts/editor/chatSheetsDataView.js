@@ -612,6 +612,8 @@ async function renderSheetsDOM(mesId = -1) {
     $('#stepwise_summary_mode').val(currentStepMode);
     const currentDelay = USER.getContext().chatMetadata?.autoFillDelay ?? 5;
     $('#auto_fill_delay').val(currentDelay);
+    const currentExtraPrompt = USER.getContext().chatMetadata?.stepwiseExtraPrompt ?? '';
+    $('#stepwise_extra_prompt').val(currentExtraPrompt);
     task.log()
 }
 
@@ -710,6 +712,13 @@ async function initTableView(mesId) {
         $(this).val(delay);
         if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
         USER.getContext().chatMetadata.autoFillDelay = delay;
+        USER.saveChat();
+    })
+
+    // 独立填表额外要求
+    $(document).on('input', '#stepwise_extra_prompt', function () {
+        if (!USER.getContext().chatMetadata) USER.getContext().chatMetadata = {};
+        USER.getContext().chatMetadata.stepwiseExtraPrompt = $(this).val();
         USER.saveChat();
     })
 

@@ -82,6 +82,12 @@
             style="height: 28px; width: 50px;" title="自动模式倒计时秒数（0=无延时）">
         <span style="font-size: 0.85rem;">秒</span>
     </div>
+    <div style="margin: 4px 0;">
+        <label for="stepwise_extra_prompt" style="font-size: 0.85rem;">独立填表额外要求 (注入为 $5):</label>
+        <textarea id="stepwise_extra_prompt" class="text_pole" rows="3"
+            style="width: 100%; resize: vertical; margin-top: 4px;"
+            placeholder="当前会话针对独立填表的额外 prompt/设定/要求，在模板中通过 $5 引用"></textarea>
+    </div>
     <hr />
     <div style="display: flex; justify-content: space-between; ">
         <div style="display: flex; justify-content: center" id="table_prev_button" title="前表">

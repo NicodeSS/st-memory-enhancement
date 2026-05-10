@@ -351,7 +351,9 @@ export async function manualSummaryChat(todoChats, confirmResult) {
     const initialProfileContext = USER.tableBaseSetting.step_by_step_inject_profile_context
         ? buildStepwiseProfileContext()
         : '';
-    
+
+    const stepwiseExtraPrompt = USER.getContext().chatMetadata?.stepwiseExtraPrompt ?? '';
+
     // 设置
     const useMainApiForStepByStep = USER.tableBaseSetting.step_by_step_use_main_api ?? true;
     const isSilentMode = confirmResult === 'dont_remind_active';
@@ -364,7 +366,8 @@ export async function manualSummaryChat(todoChats, confirmResult) {
         useMainApiForStepByStep, // API choice for step-by-step
         USER.tableBaseSetting.bool_silent_refresh, // isSilentUpdate
         isSilentMode, // Pass silent mode flag
-        initialProfileContext
+        initialProfileContext,
+        stepwiseExtraPrompt
     );
 
     console.log('执行独立填表（增量更新）结果:', r);
